@@ -1,0 +1,15 @@
+node_modules/
+.env
+.DS_Store
+dist/
+build/
+*.log
+
+# Ignore all markdown files
+*.md
+# But allow README.md
+!README.md
+
+# Ignore frontend build artifacts
+frontend/dist
+frontend/node_modules
