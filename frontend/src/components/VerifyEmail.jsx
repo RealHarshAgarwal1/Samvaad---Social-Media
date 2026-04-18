@@ -2,13 +2,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from './ui/button';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Mail } from 'lucide-react';
 
 const VerifyEmail = () => {
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
     
-    const [status, setStatus] = useState('loading'); // 'loading', 'success', 'error'
+    const [status, setStatus] = useState('loading');
     const [message, setMessage] = useState('Verifying your email...');
     const hasCalledAPI = useRef(false);
 
@@ -39,31 +39,35 @@ const VerifyEmail = () => {
     }, [token]);
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50">
-            <div className="max-w-md w-full bg-white shadow-xl rounded-2xl p-8 text-center space-y-6">
-                <div className="flex justify-center mb-6">
-                    {status === 'loading' && <Loader2 className="h-16 w-16 animate-spin text-blue-500" />}
-                    {status === 'success' && <CheckCircle2 className="h-16 w-16 text-green-500" />}
-                    {status === 'error' && <XCircle className="h-16 w-16 text-red-500" />}
+        <div className="flex items-center justify-center min-h-screen bg-[#fafafa]">
+            <div className="max-w-md w-full bg-white shadow-lg rounded-2xl p-10 text-center space-y-5 mx-4">
+                <div className="flex justify-center">
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center ${
+                        status === 'loading' ? 'bg-indigo-50' : status === 'success' ? 'bg-green-50' : 'bg-red-50'
+                    }`}>
+                        {status === 'loading' && <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />}
+                        {status === 'success' && <CheckCircle2 className="h-10 w-10 text-green-500" />}
+                        {status === 'error' && <XCircle className="h-10 w-10 text-red-500" />}
+                    </div>
                 </div>
                 
-                <h2 className="text-2xl font-bold text-gray-800">
-                    {status === 'loading' ? 'Verifying...' : status === 'success' ? 'Verified!' : 'Verification Failed'}
+                <h2 className="text-2xl font-bold text-gray-900">
+                    {status === 'loading' ? 'Verifying...' : status === 'success' ? 'Email Verified!' : 'Verification Failed'}
                 </h2>
                 
-                <p className="text-gray-600">{message}</p>
+                <p className="text-gray-500 text-sm">{message}</p>
                 
-                <div className="mt-8 pt-4">
+                <div className="pt-4">
                     {status === 'success' && (
                         <Link to="/login">
-                            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full py-6">
-                                Proceed to Login
+                            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-11 font-semibold shadow-sm">
+                                Continue to Login
                             </Button>
                         </Link>
                     )}
                     {status === 'error' && (
                         <Link to="/signup">
-                            <Button variant="outline" className="w-full rounded-full py-6 mt-4">
+                            <Button variant="outline" className="w-full rounded-xl h-11 border-gray-200">
                                 Back to Signup
                             </Button>
                         </Link>

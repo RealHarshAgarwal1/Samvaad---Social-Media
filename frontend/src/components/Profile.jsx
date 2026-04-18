@@ -5,7 +5,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { AtSign, Heart, MessageCircle } from 'lucide-react';
+import { AtSign, Heart, MessageCircle, Grid3X3, Bookmark, Film, Tag } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { setUserProfile } from '@/redux/authSlice';
@@ -28,7 +28,6 @@ const Profile = () => {
       const res = await axios.post(`/api/v1/user/followorunfollow/${userProfile?._id}`, {}, { withCredentials: true });
       if (res.data.success) {
         setIsFollowing(!isFollowing);
-        // update local profile followers 
         const updatedUserProfile = {
           ...userProfile,
           followers: isFollowing ? userProfile.followers.filter(id => id !== user._id) : [...userProfile.followers, user._id]
@@ -48,91 +47,118 @@ const Profile = () => {
 
   const displayedPost = activeTab === 'posts' ? userProfile?.posts : userProfile?.bookmarks;
 
+  const tabs = [
+    { id: 'posts', label: 'POSTS', icon: <Grid3X3 size={14} /> },
+    { id: 'saved', label: 'SAVED', icon: <Bookmark size={14} /> },
+    { id: 'reels', label: 'REELS', icon: <Film size={14} /> },
+    { id: 'tags', label: 'TAGS', icon: <Tag size={14} /> },
+  ];
+
   return (
-    <div className='flex max-w-5xl justify-center mx-auto md:pl-10'>
-      <div className='flex flex-col gap-10 md:gap-20 p-4 md:p-8'>
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-0'>
-          <section className='flex items-center justify-center'>
-            <Avatar className='h-32 w-32'>
-              <AvatarImage src={userProfile?.profilePicture} alt="profilephoto" />
-              <AvatarFallback>CN</AvatarFallback>
-            </Avatar>
-          </section>
-          <section>
-            <div className='flex flex-col gap-5 items-center md:items-start'>
-              <div className='flex flex-col md:flex-row items-center gap-2 flex-wrap justify-center md:justify-start'>
-                <span>{userProfile?.username}</span>
-                {
-                  isLoggedInUserProfile ? (
-                    <>
-                      <Link to="/account/edit"><Button variant='secondary' className='hover:bg-gray-200 h-8'>Edit profile</Button></Link>
-                      <Button variant='secondary' className='hover:bg-gray-200 h-8'>View archive</Button>
-                      <Button variant='secondary' className='hover:bg-gray-200 h-8'>Ad tools</Button>
-                    </>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={followHandler} 
-                        className={`h-8 font-semibold w-24 transition-colors duration-300 shadow-sm ${
-                          isFollowing 
-                            ? 'bg-gray-200 hover:bg-gray-300 text-black' 
-                            : 'bg-blue-500 hover:bg-blue-600 text-white'
-                        }`}
-                      >
-                        {isFollowing ? 'Unfollow' : 'Follow'}
-                      </Button>
-                      {isFollowing && <Button variant='secondary' className='h-8'>Message</Button>}
-                    </div>
-                  )
-                }
+    <div className='max-w-4xl mx-auto px-4 md:px-8 py-8 pb-20 md:pb-8'>
+      {/* Profile header */}
+      <div className='flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-16 mb-10'>
+        <div className='flex-shrink-0'>
+          <Avatar className='h-32 w-32 md:h-36 md:w-36 ring-4 ring-offset-4 ring-indigo-100'>
+            <AvatarImage src={userProfile?.profilePicture} alt="profilephoto" />
+            <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white text-3xl">{userProfile?.username?.[0]?.toUpperCase()}</AvatarFallback>
+          </Avatar>
+        </div>
+
+        <div className='flex flex-col items-center md:items-start gap-4 flex-1'>
+          {/* Username & actions */}
+          <div className='flex flex-col sm:flex-row items-center gap-3'>
+            <h1 className='text-xl font-semibold'>{userProfile?.username}</h1>
+            {isLoggedInUserProfile ? (
+              <div className="flex gap-2">
+                <Link to="/account/edit"><Button className='bg-gray-100 text-gray-700 hover:bg-gray-200 h-8 rounded-lg text-xs font-semibold px-4 shadow-none'>Edit profile</Button></Link>
+                <Button className='bg-gray-100 text-gray-700 hover:bg-gray-200 h-8 rounded-lg text-xs font-semibold px-4 shadow-none'>View archive</Button>
               </div>
-              <div className='flex items-center gap-4 text-sm'>
-                <p><span className='font-semibold'>{userProfile?.posts?.length} </span>posts</p>
-                <p><span className='font-semibold'>{userProfile?.followers?.length} </span>followers</p>
-                <p><span className='font-semibold'>{userProfile?.following?.length} </span>following</p>
+            ) : (
+              <div className="flex gap-2">
+                <Button 
+                  onClick={followHandler} 
+                  className={`h-8 font-semibold rounded-lg text-xs px-6 transition-all duration-300 shadow-sm ${
+                    isFollowing 
+                      ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' 
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                  }`}
+                >
+                  {isFollowing ? 'Following' : 'Follow'}
+                </Button>
+                {isFollowing && <Button className='bg-gray-100 text-gray-700 hover:bg-gray-200 h-8 rounded-lg text-xs font-semibold shadow-none'>Message</Button>}
               </div>
-              <div className='flex flex-col gap-1'>
-                <span className='font-semibold'>{userProfile?.bio || 'bio here...'}</span>
-                <Badge className='w-fit' variant='secondary'><AtSign /> <span className='pl-1'>{userProfile?.username}</span> </Badge>
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className='flex items-center gap-8'>
+            <div className='text-center md:text-left'>
+              <span className='font-bold text-lg'>{userProfile?.posts?.length || 0}</span>
+              <span className='text-gray-500 text-sm ml-1'>posts</span>
+            </div>
+            <div className='text-center md:text-left'>
+              <span className='font-bold text-lg'>{userProfile?.followers?.length || 0}</span>
+              <span className='text-gray-500 text-sm ml-1'>followers</span>
+            </div>
+            <div className='text-center md:text-left'>
+              <span className='font-bold text-lg'>{userProfile?.following?.length || 0}</span>
+              <span className='text-gray-500 text-sm ml-1'>following</span>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className='text-center md:text-left'>
+            <p className='text-sm text-gray-700'>{userProfile?.bio || 'No bio yet.'}</p>
+            <Badge className='mt-2 bg-indigo-50 text-indigo-600 border-0 font-medium' variant='secondary'>
+              <AtSign size={12} /> <span className='pl-1'>{userProfile?.username}</span>
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className='border-t border-gray-200'>
+        <div className='flex items-center justify-center gap-12'>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              className={`flex items-center gap-1.5 py-3 text-xs font-semibold tracking-wider uppercase transition-all duration-200 border-t-2 -mt-[1px]
+                ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+              onClick={() => handleTabChange(tab.id)}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div className='grid grid-cols-2 sm:grid-cols-3 gap-1 mt-1'>
+          {displayedPost?.map((post) => (
+            <div key={post?._id} className='relative group cursor-pointer aspect-square overflow-hidden rounded-sm'>
+              <img src={post.image} alt='postimage' className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105' />
+              <div className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200'>
+                <div className='flex items-center text-white gap-6'>
+                  <span className='flex items-center gap-1.5 font-semibold text-sm'>
+                    <Heart size={18} fill="white" /> {post?.likes?.length}
+                  </span>
+                  <span className='flex items-center gap-1.5 font-semibold text-sm'>
+                    <MessageCircle size={18} fill="white" /> {post?.comments?.length}
+                  </span>
+                </div>
               </div>
             </div>
-          </section>
+          ))}
         </div>
-        <div className='border-t border-t-gray-200'>
-          <div className='flex items-center justify-center gap-10 text-sm'>
-            <span className={`py-3 cursor-pointer ${activeTab === 'posts' ? 'font-bold' : ''}`} onClick={() => handleTabChange('posts')}>
-              POSTS
-            </span>
-            <span className={`py-3 cursor-pointer ${activeTab === 'saved' ? 'font-bold' : ''}`} onClick={() => handleTabChange('saved')}>
-              SAVED
-            </span>
-            <span className='py-3 cursor-pointer'>REELS</span>
-            <span className='py-3 cursor-pointer'>TAGS</span>
+
+        {(!displayedPost || displayedPost.length === 0) && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="w-16 h-16 rounded-full border-2 border-gray-200 flex items-center justify-center mb-3">
+              <Grid3X3 className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="text-gray-400 font-medium">No posts yet</p>
           </div>
-          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1'>
-            {
-              displayedPost?.map((post) => {
-                return (
-                  <div key={post?._id} className='relative group cursor-pointer'>
-                    <img src={post.image} alt='postimage' className='rounded-sm my-2 w-full aspect-square object-cover' />
-                    <div className='absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
-                      <div className='flex items-center text-white space-x-4'>
-                        <button className='flex items-center gap-2 hover:text-gray-300'>
-                          <Heart />
-                          <span>{post?.likes.length}</span>
-                        </button>
-                        <button className='flex items-center gap-2 hover:text-gray-300'>
-                          <MessageCircle />
-                          <span>{post?.comments.length}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
-            }
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )

@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { Heart, MessageCircle } from 'lucide-react'
+import { Heart, MessageCircle, Compass } from 'lucide-react'
 import { useSelector, useDispatch } from 'react-redux'
 import axios from 'axios'
 import { setPosts } from '@/redux/postSlice'
@@ -25,34 +24,43 @@ const Explore = () => {
     }, [dispatch]);
 
     return (
-        <div className='flex max-w-5xl justify-center mx-auto pl-10'>
-            <div className='my-8 w-full p-8'>
-                <div className='grid grid-cols-3 gap-1'>
-                    {
-                        posts?.map((post) => {
-                            return (
-                                <div key={post?._id} className='relative group cursor-pointer'>
-                                    <Link to={`/profile/${post?.author?._id}`}>
-                                        <img src={post.image} alt='postimage' className='rounded-sm my-2 w-full aspect-square object-cover' />
-                                        <div className='absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
-                                            <div className='flex items-center text-white space-x-4'>
-                                                <button className='flex items-center gap-2 hover:text-gray-300'>
-                                                    <Heart />
-                                                    <span>{post?.likes.length}</span>
-                                                </button>
-                                                <button className='flex items-center gap-2 hover:text-gray-300'>
-                                                    <MessageCircle />
-                                                    <span>{post?.comments.length}</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                </div>
-                            )
-                        })
-                    }
+        <div className='max-w-5xl mx-auto px-4 py-6 pb-20 md:pb-6'>
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center">
+                    <Compass className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                    <h1 className="text-xl font-bold text-gray-900">Explore</h1>
+                    <p className="text-xs text-gray-400">Discover posts from everyone</p>
                 </div>
             </div>
+
+            <div className='grid grid-cols-2 sm:grid-cols-3 gap-1'>
+                {posts?.map((post) => (
+                    <div key={post?._id} className='relative group cursor-pointer aspect-square overflow-hidden rounded-sm'>
+                        <Link to={`/profile/${post?.author?._id}`}>
+                            <img src={post.image} alt='postimage' className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105' />
+                            <div className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200'>
+                                <div className='flex items-center text-white gap-6'>
+                                    <span className='flex items-center gap-1.5 font-semibold text-sm'>
+                                        <Heart size={18} fill="white" /> {post?.likes?.length}
+                                    </span>
+                                    <span className='flex items-center gap-1.5 font-semibold text-sm'>
+                                        <MessageCircle size={18} fill="white" /> {post?.comments?.length}
+                                    </span>
+                                </div>
+                            </div>
+                        </Link>
+                    </div>
+                ))}
+            </div>
+
+            {(!posts || posts.length === 0) && (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <Compass className="w-12 h-12 text-gray-200 mb-3" />
+                    <p className="text-gray-400">No posts to explore yet</p>
+                </div>
+            )}
         </div>
     )
 }

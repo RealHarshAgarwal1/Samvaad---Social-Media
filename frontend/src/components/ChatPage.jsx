@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { setSelectedUser } from '@/redux/authSlice';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { MessageCircleCode } from 'lucide-react';
+import { MessageCircleCode, ArrowLeft, Send } from 'lucide-react';
 import Messages from './Messages';
 import axios from 'axios';
 import { setMessages } from '@/redux/chatSlice';
@@ -18,9 +18,7 @@ const ChatPage = () => {
     const sendMessageHandler = async (receiverId) => {
         try {
             const res = await axios.post(`/api/v1/message/send/${receiverId}`, { textMessage }, {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 withCredentials: true
             });
             if (res.data.success) {
@@ -39,63 +37,94 @@ const ChatPage = () => {
     }, []);
 
     return (
-        <div className='flex h-[calc(100vh-3.5rem)] md:h-screen flex-row pb-14 md:pb-0 w-full'>
-            <section className={`w-full md:w-1/4 md:block my-8 border-r md:border-r-gray-300 ${selectedUser ? 'hidden' : 'block'}`}>
-                <h1 className='font-bold mb-4 px-3 text-xl'>{user?.username}</h1>
-                <hr className='mb-4 border-gray-300' />
-                <div className='overflow-y-auto h-[80vh]'>
-                    {
-                        suggestedUsers.map((suggestedUser) => {
-                            const isOnline = onlineUsers.includes(suggestedUser?._id);
-                            return (
-                                <div onClick={() => dispatch(setSelectedUser(suggestedUser))} className='flex gap-3 items-center p-3 hover:bg-gray-50 cursor-pointer'>
-                                    <div className='relative'>
-                                        <Avatar className='w-14 h-14'>
-                                            <AvatarImage src={suggestedUser?.profilePicture} />
-                                            <AvatarFallback>CN</AvatarFallback>
-                                        </Avatar>
-                                        {isOnline && <div className='absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white'></div>}
-                                    </div>
-                                    <div className='flex flex-col'>
-                                        <span className='font-medium'>{suggestedUser?.username}</span>
-                                        <span className={`text-xs font-bold ${isOnline ? 'text-green-600' : 'text-gray-500'} flex items-center gap-1`}>
-                                            {isOnline ? 'online' : 'offline'}
-                                        </span>
-                                    </div>
-                                </div>
-                            )
-                        })
-                    }
+        <div className='flex h-[calc(100vh-4rem)] md:h-screen w-full bg-white rounded-xl md:rounded-none overflow-hidden'>
+            {/* Conversations list */}
+            <section className={`w-full md:w-80 lg:w-96 border-r border-gray-100 flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
+                <div className='px-5 py-4 border-b border-gray-100'>
+                    <h1 className='font-bold text-xl'>{user?.username}</h1>
+                    <p className='text-xs text-gray-400 mt-0.5'>Direct Messages</p>
                 </div>
-
-            </section>
-            {
-                selectedUser ? (
-                    <section className='flex-1 border-l border-l-gray-300 flex flex-col h-full'>
-                        <div className='flex gap-3 items-center px-3 py-2 border-b border-gray-300 sticky top-0 bg-white z-10'>
-                            <Button onClick={() => dispatch(setSelectedUser(null))} variant="ghost" className="md:hidden mr-2 h-8 px-2">Back</Button>
-                            <Avatar>
-                                <AvatarImage src={selectedUser?.profilePicture} alt='profile' />
-                                <AvatarFallback>CN</AvatarFallback>
-                            </Avatar>
-                            <div className='flex flex-col'>
-                                <span>{selectedUser?.username}</span>
+                <div className='overflow-y-auto flex-1'>
+                    {suggestedUsers.map((suggestedUser) => {
+                        const isOnline = onlineUsers.includes(suggestedUser?._id);
+                        const isSelected = selectedUser?._id === suggestedUser?._id;
+                        return (
+                            <div onClick={() => dispatch(setSelectedUser(suggestedUser))} key={suggestedUser._id}
+                                className={`flex gap-3 items-center px-5 py-3.5 cursor-pointer transition-all duration-200
+                                ${isSelected ? 'bg-indigo-50 border-r-2 border-indigo-500' : 'hover:bg-gray-50'}`}>
+                                <div className='relative'>
+                                    <Avatar className='w-12 h-12'>
+                                        <AvatarImage src={suggestedUser?.profilePicture} />
+                                        <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white">{suggestedUser?.username?.[0]?.toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    {isOnline && (
+                                        <div className='absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white'>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className='flex flex-col flex-1 min-w-0'>
+                                    <span className='font-semibold text-sm'>{suggestedUser?.username}</span>
+                                    <span className={`text-xs ${isOnline ? 'text-green-500' : 'text-gray-400'}`}>
+                                        {isOnline ? 'Active now' : 'Offline'}
+                                    </span>
+                                </div>
                             </div>
+                        )
+                    })}
+                </div>
+            </section>
+
+            {/* Chat area */}
+            {selectedUser ? (
+                <section className='flex-1 flex flex-col h-full bg-gray-50/50'>
+                    {/* Chat header */}
+                    <div className='flex gap-3 items-center px-4 py-3 border-b border-gray-100 bg-white'>
+                        <Button onClick={() => dispatch(setSelectedUser(null))} variant="ghost" size="icon" className="md:hidden h-8 w-8 rounded-full">
+                            <ArrowLeft size={18} />
+                        </Button>
+                        <Avatar className="w-9 h-9">
+                            <AvatarImage src={selectedUser?.profilePicture} alt='profile' />
+                            <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white text-sm">{selectedUser?.username?.[0]?.toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className='flex flex-col'>
+                            <span className='font-semibold text-sm'>{selectedUser?.username}</span>
+                            <span className={`text-[11px] ${onlineUsers.includes(selectedUser?._id) ? 'text-green-500' : 'text-gray-400'}`}>
+                                {onlineUsers.includes(selectedUser?._id) ? 'Active now' : 'Offline'}
+                            </span>
                         </div>
-                        <Messages selectedUser={selectedUser} />
-                        <div className='flex items-center p-4 border-t border-t-gray-300'>
-                            <Input value={textMessage} onChange={(e) => setTextMessage(e.target.value)} type="text" className='flex-1 mr-2 focus-visible:ring-transparent' placeholder="Messages..." />
-                            <Button onClick={() => sendMessageHandler(selectedUser?._id)}>Send</Button>
-                        </div>
-                    </section>
-                ) : (
-                    <div className='hidden md:flex flex-col items-center justify-center mx-auto flex-1'>
-                        <MessageCircleCode className='w-32 h-32 my-4' />
-                        <h1 className='font-medium'>Your messages</h1>
-                        <span>Send a message to start a chat.</span>
                     </div>
-                )
-            }
+
+                    {/* Messages */}
+                    <Messages selectedUser={selectedUser} />
+
+                    {/* Input */}
+                    <div className='flex items-center gap-2 p-3 border-t border-gray-100 bg-white'>
+                        <Input 
+                            value={textMessage} 
+                            onChange={(e) => setTextMessage(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && textMessage.trim() && sendMessageHandler(selectedUser?._id)}
+                            type="text" 
+                            className='flex-1 rounded-full border-gray-200 focus-visible:ring-indigo-200 bg-gray-50 px-4' 
+                            placeholder="Type a message..." 
+                        />
+                        <Button 
+                            onClick={() => sendMessageHandler(selectedUser?._id)} 
+                            disabled={!textMessage.trim()}
+                            size="icon"
+                            className="rounded-full bg-indigo-600 hover:bg-indigo-700 h-10 w-10 shadow-sm">
+                            <Send size={16} />
+                        </Button>
+                    </div>
+                </section>
+            ) : (
+                <div className='hidden md:flex flex-col items-center justify-center flex-1 bg-gray-50/30'>
+                    <div className="w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
+                        <MessageCircleCode className='w-10 h-10 text-indigo-400' />
+                    </div>
+                    <h1 className='font-semibold text-lg text-gray-700'>Your messages</h1>
+                    <span className='text-gray-400 text-sm mt-1'>Send a message to start a conversation</span>
+                </div>
+            )}
         </div>
     )
 }

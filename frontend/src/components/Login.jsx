@@ -54,19 +54,20 @@ const Login = () => {
     }, [])
     
     return (
-        <div className="flex w-screen h-screen bg-gray-50 overflow-hidden">
+        <div className="flex w-screen h-screen bg-[#fafafa] overflow-hidden">
             {/* Left Side: Aesthetic Gradient & Copy */}
-            <div className="hidden lg:flex flex-col justify-center items-center w-1/2 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white p-12 relative overflow-hidden">
-                <div className="absolute inset-0 bg-white/10 backdrop-blur-3xl z-0"></div>
+            <div className="hidden lg:flex flex-col justify-center items-center w-1/2 bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white p-12 relative overflow-hidden">
+                <div className="absolute inset-0 bg-white/5 backdrop-blur-3xl z-0"></div>
                 <div className="z-10 text-center max-w-md">
-                    <h1 className="text-5xl font-extrabold mb-6 tracking-tight drop-shadow-lg">Welcome Back</h1>
-                    <p className="text-xl text-white/90 font-medium leading-relaxed">
+                    <h1 className="text-4xl font-extrabold mb-4 tracking-tight logo-robotic">Samvaad</h1>
+                    <h2 className="text-2xl font-bold mb-4">Welcome Back</h2>
+                    <p className="text-lg text-white/80 font-medium leading-relaxed">
                         Sign in to continue exploring your world and connecting with your favorite people.
                     </p>
                 </div>
-                {/* Decorative floating shapes */}
-                <div className="absolute top-20 right-20 w-32 h-32 bg-white/20 rounded-full blur-2xl animate-pulse"></div>
-                <div className="absolute bottom-20 left-20 w-40 h-40 bg-white/20 rounded-full blur-3xl animate-bounce"></div>
+                <div className="absolute top-20 right-20 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                <div className="absolute bottom-32 left-16 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                <div className="absolute top-1/2 left-1/2 w-60 h-60 bg-purple-500/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
             </div>
 
             {/* Right Side: Form */}
@@ -78,7 +79,7 @@ const Login = () => {
                         <p className="text-gray-500">Welcome back! Please enter your details.</p>
                     </div>
 
-                    <div className="space-y-5 shadow-sm bg-white p-8 rounded-3xl border border-gray-100">
+                    <div className="space-y-5 shadow-lg shadow-gray-100/50 bg-white p-8 rounded-2xl border border-gray-100">
                         {/* Email */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>

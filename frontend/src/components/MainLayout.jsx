@@ -4,9 +4,9 @@ import LeftSidebar from './LeftSidebar'
 
 const MainLayout = () => {
   return (
-    <div>
+    <div className="min-h-screen bg-[#fafafa]">
          <LeftSidebar/>
-        <div className="md:ml-20 lg:ml-[16%] pb-14 md:pb-0">
+        <div className="md:ml-20 lg:ml-64 pb-16 md:pb-0 min-h-screen">
             <Outlet/>
         </div>
     </div>
