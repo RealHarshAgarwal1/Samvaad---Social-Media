@@ -17,6 +17,9 @@ import { setOnlineUsers } from './redux/chatSlice'
 import { setLikeNotification } from './redux/rtnSlice'
 import ProtectedRoutes from './components/ProtectedRoutes'
 
+const socketUrl = import.meta.env.DEV
+  ? (import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000')
+  : '/';
 
 const browserRouter = createBrowserRouter([
   {
@@ -70,11 +73,12 @@ function App() {
 
   useEffect(() => {
     if (user) {
-      const socketio = io('/', {
+      const socketio = io(socketUrl, {
         query: {
           userId: user?._id
         },
-        transports: ['websocket']
+        transports: ['websocket'],
+        withCredentials: true,
       });
       dispatch(setSocket(socketio));
 
