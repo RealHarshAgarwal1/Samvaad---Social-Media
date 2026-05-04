@@ -1,4 +1,4 @@
-import { Heart, Home, LogOut, MessageCircle, PlusSquare, Search, TrendingUp, Bell } from 'lucide-react'
+import { Heart, Home, LogOut, MessageCircle, PlusSquare, Search, TrendingUp, Bell, Film } from 'lucide-react'
 import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { toast } from 'sonner'
@@ -70,6 +70,8 @@ const LeftSidebar = () => {
             navigate("/chat");
         } else if (textType === 'Explore') {
             navigate("/explore");
+        } else if (textType === 'Reels') {
+            navigate("/reels");
         } else if (textType === 'Notifications') {
             navigate("/notifications");
         } else if (textType === 'Search') {
@@ -78,7 +80,7 @@ const LeftSidebar = () => {
     }
 
     const isActive = (text) => {
-        const map = { 'Home': '/', 'Explore': '/explore', 'Messages': '/chat', 'Notifications': '/notifications', 'Profile': `/profile/${user?._id}` };
+        const map = { 'Home': '/', 'Search': '/search', 'Explore': '/explore', 'Reels': '/reels', 'Messages': '/chat', 'Notifications': '/notifications', 'Profile': `/profile/${user?._id}` };
         return location.pathname === map[text];
     };
 
@@ -86,6 +88,7 @@ const LeftSidebar = () => {
         { icon: <Home />, text: "Home" },
         { icon: <Search />, text: "Search" },
         { icon: <TrendingUp />, text: "Explore" },
+        { icon: <Film />, text: "Reels" },
         { icon: <MessageCircle />, text: "Messages" },
         { icon: <Bell />, text: "Notifications" },
         { icon: <PlusSquare />, text: "Create" },

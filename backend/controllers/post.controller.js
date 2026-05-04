@@ -9,23 +9,36 @@ import { Notification } from "../models/notification.model.js";
 export const addNewPost = async (req, res) => {
     try {
         const { caption } = req.body;
-        const image = req.file;
+        const file = req.file;
         const authorId = req.id;
 
-        if (!image) return res.status(400).json({ message: 'Image required' });
+        if (!file) return res.status(400).json({ message: 'File required' });
 
-        // image upload 
-        const optimizedImageBuffer = await sharp(image.buffer)
-            .resize({ width: 800, height: 800, fit: 'inside' })
-            .toFormat('jpeg', { quality: 80 })
-            .toBuffer();
+        let cloudResponse;
+        let isReel = false;
 
-        // buffer to data uri
-        const fileUri = `data:image/jpeg;base64,${optimizedImageBuffer.toString('base64')}`;
-        const cloudResponse = await cloudinary.uploader.upload(fileUri);
+        if (file.mimetype.startsWith('video/')) {
+            isReel = true;
+            // Upload video
+            const fileUri = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+            cloudResponse = await cloudinary.uploader.upload(fileUri, { resource_type: "video" });
+        } else {
+            // image upload 
+            const optimizedImageBuffer = await sharp(file.buffer)
+                .resize({ width: 800, height: 800, fit: 'inside' })
+                .toFormat('jpeg', { quality: 80 })
+                .toBuffer();
+
+            // buffer to data uri
+            const fileUri = `data:image/jpeg;base64,${optimizedImageBuffer.toString('base64')}`;
+            cloudResponse = await cloudinary.uploader.upload(fileUri);
+        }
+
         const post = await Post.create({
             caption,
-            image: cloudResponse.secure_url,
+            image: !isReel ? cloudResponse.secure_url : undefined,
+            video: isReel ? cloudResponse.secure_url : undefined,
+            isReel,
             author: authorId
         });
         const user = await User.findById(authorId);
@@ -74,6 +87,32 @@ export const getAllPost = async (req, res) => {
         });
     }
 };
+
+export const getAllReels = async (req, res) => {
+    try {
+        const reels = await Post.find({ isReel: true }).sort({ createdAt: -1 })
+            .populate({ path: 'author', select: 'username profilePicture' })
+            .populate({
+                path: 'comments',
+                sort: { createdAt: -1 },
+                populate: {
+                    path: 'author',
+                    select: 'username profilePicture'
+                }
+            });
+        return res.status(200).json({
+            reels,
+            success: true
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: error.message || "Internal server error",
+            success: false
+        });
+    }
+};
+
 export const getUserPost = async (req, res) => {
     try {
         const authorId = req.id;

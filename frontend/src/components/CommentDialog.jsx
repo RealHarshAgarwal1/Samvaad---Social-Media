@@ -61,11 +61,21 @@ const CommentDialog = ({ open, setOpen }) => {
         <div className='flex flex-1 max-h-[80vh]'>
           {/* Image */}
           <div className='hidden md:block w-1/2 bg-black'>
-            <img
-              src={selectedPost?.image}
-              alt="post_img"
-              className='w-full h-full object-contain'
-            />
+            {selectedPost?.isReel || selectedPost?.video ? (
+              <video
+                src={selectedPost?.video}
+                className='w-full h-full object-contain'
+                autoPlay
+                loop
+                muted
+              />
+            ) : (
+              <img
+                src={selectedPost?.image}
+                alt="post_img"
+                className='w-full h-full object-contain'
+              />
+            )}
           </div>
 
           {/* Comments panel */}

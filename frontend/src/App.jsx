@@ -7,6 +7,7 @@ import MainLayout from './components/MainLayout'
 import Profile from './components/Profile'
 import Signup from './components/Signup'
 import Explore from './components/Explore'
+import Reels from './components/Reels'
 import VerifyEmail from './components/VerifyEmail'
 import NotificationsPage from './components/NotificationsPage'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
@@ -45,6 +46,10 @@ const browserRouter = createBrowserRouter([
       {
         path: '/explore',
         element: <ProtectedRoutes><Explore /></ProtectedRoutes>
+      },
+      {
+        path: '/reels',
+        element: <ProtectedRoutes><Reels /></ProtectedRoutes>
       },
       {
         path: '/notifications',

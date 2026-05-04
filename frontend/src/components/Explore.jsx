@@ -1,13 +1,14 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Heart, MessageCircle, Compass } from 'lucide-react'
 import { useSelector, useDispatch } from 'react-redux'
 import axios from 'axios'
-import { setPosts } from '@/redux/postSlice'
-import { Link } from 'react-router-dom'
+import { setPosts, setSelectedPost } from '@/redux/postSlice'
+import CommentDialog from './CommentDialog'
 
 const Explore = () => {
     const dispatch = useDispatch();
     const { posts } = useSelector(store => store.post);
+    const [openPost, setOpenPost] = useState(false);
 
     useEffect(() => {
         const fetchAllPosts = async () => {
@@ -23,6 +24,11 @@ const Explore = () => {
         fetchAllPosts();
     }, [dispatch]);
 
+    const handlePostClick = (post) => {
+        dispatch(setSelectedPost(post));
+        setOpenPost(true);
+    };
+
     return (
         <div className='max-w-5xl mx-auto px-4 py-6 pb-20 md:pb-6'>
             <div className="flex items-center gap-3 mb-6">
@@ -37,20 +43,32 @@ const Explore = () => {
 
             <div className='grid grid-cols-2 sm:grid-cols-3 gap-1'>
                 {posts?.map((post) => (
-                    <div key={post?._id} className='relative group cursor-pointer aspect-square overflow-hidden rounded-sm'>
-                        <Link to={`/profile/${post?.author?._id}`}>
-                            <img src={post.image} alt='postimage' className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105' />
-                            <div className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200'>
-                                <div className='flex items-center text-white gap-6'>
-                                    <span className='flex items-center gap-1.5 font-semibold text-sm'>
-                                        <Heart size={18} fill="white" /> {post?.likes?.length}
-                                    </span>
-                                    <span className='flex items-center gap-1.5 font-semibold text-sm'>
-                                        <MessageCircle size={18} fill="white" /> {post?.comments?.length}
-                                    </span>
-                                </div>
+                    <div 
+                        key={post?._id} 
+                        className='relative group cursor-pointer aspect-square overflow-hidden rounded-sm'
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handlePostClick(post);
+                        }}
+                    >
+                        {post?.isReel || post?.video ? (
+                            <video src={post.video} className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none' muted />
+                        ) : (
+                            <img src={post.image} alt='postimage' className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none' />
+                        )}
+                        <div className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none'>
+                            <div className='flex items-center text-white gap-6'>
+                                <span className='flex items-center gap-1.5 font-semibold text-sm'>
+                                    <Heart size={18} fill="white" /> {post?.likes?.length || 0}
+                                </span>
+                                <span className='flex items-center gap-1.5 font-semibold text-sm'>
+                                    <MessageCircle size={18} fill="white" /> {post?.comments?.length || 0}
+                                </span>
                             </div>
-                        </Link>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -61,6 +79,8 @@ const Explore = () => {
                     <p className="text-gray-400">No posts to explore yet</p>
                 </div>
             )}
+            
+            <CommentDialog open={openPost} setOpen={setOpenPost} />
         </div>
     )
 }

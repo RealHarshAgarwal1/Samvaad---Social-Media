@@ -98,6 +98,15 @@ const Post = ({ post }) => {
         }
     }
 
+    const shareHandler = async () => {
+        try {
+            await navigator.clipboard.writeText(`${window.location.origin}/`);
+            toast.success("Link copied to clipboard!");
+        } catch (err) {
+            toast.error("Failed to copy link");
+        }
+    }
+
     return (
         <div className='my-6 w-full max-w-lg mx-auto bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden card-hover'>
             {/* Header */}
@@ -126,12 +135,26 @@ const Post = ({ post }) => {
                 </Dialog>
             </div>
 
-            {/* Image */}
-            <img
-                className='w-full aspect-square object-cover'
-                src={post.image}
-                alt="post_img"
-            />
+            {/* Image or Video */}
+            {post?.isReel || post?.video ? (
+                <video
+                    className='w-full aspect-square object-cover cursor-pointer'
+                    src={post.video}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="metadata"
+                    onClick={() => { dispatch(setSelectedPost(post)); setOpen(true); }}
+                />
+            ) : (
+                <img
+                    className='w-full aspect-square object-cover cursor-pointer'
+                    src={post.image}
+                    alt="post_img"
+                    onClick={() => { dispatch(setSelectedPost(post)); setOpen(true); }}
+                />
+            )}
 
             {/* Actions */}
             <div className='px-4 pt-3'>
@@ -142,7 +165,7 @@ const Post = ({ post }) => {
                             <FaRegHeart onClick={likeOrDislikeHandler} size={'22'} className='cursor-pointer hover:text-gray-500 transition-colors' />
                         }
                         <MessageCircle onClick={() => { dispatch(setSelectedPost(post)); setOpen(true); }} className='cursor-pointer hover:text-gray-500 transition-colors' size={22} />
-                        <Send className='cursor-pointer hover:text-gray-500 transition-colors' size={22} />
+                        <Send onClick={shareHandler} className='cursor-pointer hover:text-gray-500 transition-colors' size={22} />
                     </div>
                     <Bookmark onClick={bookmarkHandler} className='cursor-pointer hover:text-gray-500 transition-colors' size={22} />
                 </div>

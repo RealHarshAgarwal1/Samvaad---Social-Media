@@ -14,7 +14,8 @@ const CreatePost = ({ open, setOpen }) => {
   const imageRef = useRef();
   const [file, setFile] = useState("");
   const [caption, setCaption] = useState("");
-  const [imagePreview, setImagePreview] = useState("");
+  const [filePreview, setFilePreview] = useState("");
+  const [fileType, setFileType] = useState("");
   const [loading, setLoading] = useState(false);
   const { user } = useSelector(store => store.auth);
   const { posts } = useSelector(store => store.post);
@@ -24,15 +25,16 @@ const CreatePost = ({ open, setOpen }) => {
     const file = e.target.files?.[0];
     if (file) {
       setFile(file);
+      setFileType(file.type.startsWith('video/') ? 'video' : 'image');
       const dataUrl = await readFileAsDataURL(file);
-      setImagePreview(dataUrl);
+      setFilePreview(dataUrl);
     }
   }
 
   const createPostHandler = async (e) => {
     const formData = new FormData();
     formData.append("caption", caption);
-    if (imagePreview) formData.append("image", file);
+    if (filePreview) formData.append("file", file);
     try {
       setLoading(true);
       const res = await axios.post('/api/v1/post/addpost', formData, {
@@ -44,7 +46,8 @@ const CreatePost = ({ open, setOpen }) => {
         toast.success(res.data.message);
         setOpen(false);
         setCaption("");
-        setImagePreview("");
+        setFilePreview("");
+        setFileType("");
         setFile("");
       }
     } catch (error) {
@@ -57,8 +60,8 @@ const CreatePost = ({ open, setOpen }) => {
   return (
     <Dialog open={open}>
       <DialogContent onInteractOutside={() => setOpen(false)} className="rounded-2xl border-0 shadow-2xl max-w-lg">
-        <DialogTitle className='sr-only'>Create New Post</DialogTitle>
-        <DialogDescription className='sr-only'>Write a caption and upload an image to share a new post.</DialogDescription>
+        <DialogTitle className='sr-only'>Create New Post or Reel</DialogTitle>
+        <DialogDescription className='sr-only'>Write a caption and upload an image or video to share a new post.</DialogDescription>
         <DialogHeader className='text-center font-semibold text-lg'>Create New Post</DialogHeader>
         
         <div className='flex gap-3 items-center'>
@@ -79,11 +82,15 @@ const CreatePost = ({ open, setOpen }) => {
           placeholder="Write a caption..." 
         />
 
-        {imagePreview ? (
-          <div className='relative w-full h-64 rounded-xl overflow-hidden group'>
-            <img src={imagePreview} alt="preview_img" className='object-cover h-full w-full' />
+        {filePreview ? (
+          <div className='relative w-full h-64 rounded-xl overflow-hidden group bg-black flex items-center justify-center'>
+            {fileType === 'video' ? (
+              <video src={filePreview} controls className='object-contain h-full w-full' />
+            ) : (
+              <img src={filePreview} alt="preview_img" className='object-cover h-full w-full' />
+            )}
             <button 
-              onClick={() => { setImagePreview(""); setFile(""); }} 
+              onClick={() => { setFilePreview(""); setFile(""); setFileType(""); }} 
               className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <X size={14} />
@@ -95,13 +102,13 @@ const CreatePost = ({ open, setOpen }) => {
             className="w-full h-40 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all duration-200"
           >
             <ImagePlus className="w-8 h-8 text-gray-300 mb-2" />
-            <span className="text-sm text-gray-400">Click to select an image</span>
+            <span className="text-sm text-gray-400">Click to select an image or video</span>
           </div>
         )}
 
-        <input ref={imageRef} type='file' className='hidden' onChange={fileChangeHandler} accept="image/*" />
+        <input ref={imageRef} type='file' className='hidden' onChange={fileChangeHandler} accept="image/*,video/*" />
 
-        {imagePreview && (
+        {filePreview && (
           loading ? (
             <Button className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-xl h-11">
               <Loader2 className='mr-2 h-4 w-4 animate-spin' />

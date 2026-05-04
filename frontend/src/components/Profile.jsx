@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import useGetUserProfile from '@/hooks/useGetUserProfile';
 import { Link, useParams } from 'react-router-dom';
@@ -9,17 +9,24 @@ import { AtSign, Heart, MessageCircle, Grid3X3, Bookmark, Film, Tag } from 'luci
 import axios from 'axios';
 import { toast } from 'sonner';
 import { setUserProfile } from '@/redux/authSlice';
+import { setSelectedPost } from '@/redux/postSlice';
+import CommentDialog from './CommentDialog';
 
 const Profile = () => {
   const params = useParams();
   const userId = params.id;
   useGetUserProfile(userId);
   const [activeTab, setActiveTab] = useState('posts');
+  const [openPost, setOpenPost] = useState(false);
 
   const { userProfile, user } = useSelector(store => store.auth);
   const dispatch = useDispatch();
 
-  const [isFollowing, setIsFollowing] = useState(userProfile?.followers?.includes(user?._id));
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  useEffect(() => {
+    setIsFollowing(userProfile?.followers?.includes(user?._id));
+  }, [userProfile, user]);
 
   const isLoggedInUserProfile = user?._id === userProfile?._id;
 
@@ -45,7 +52,19 @@ const Profile = () => {
     setActiveTab(tab);
   }
 
-  const displayedPost = activeTab === 'posts' ? userProfile?.posts : userProfile?.bookmarks;
+  let displayedPost = [];
+  if (activeTab === 'posts') {
+    displayedPost = userProfile?.posts?.filter(p => !p.isReel) || [];
+  } else if (activeTab === 'saved') {
+    displayedPost = userProfile?.bookmarks || [];
+  } else if (activeTab === 'reels') {
+    displayedPost = userProfile?.posts?.filter(p => p.isReel) || [];
+  }
+
+  const handlePostClick = (post) => {
+    dispatch(setSelectedPost(post));
+    setOpenPost(true);
+  };
 
   const tabs = [
     { id: 'posts', label: 'POSTS', icon: <Grid3X3 size={14} /> },
@@ -135,15 +154,37 @@ const Profile = () => {
         {/* Grid */}
         <div className='grid grid-cols-2 sm:grid-cols-3 gap-1 mt-1'>
           {displayedPost?.map((post) => (
-            <div key={post?._id} className='relative group cursor-pointer aspect-square overflow-hidden rounded-sm'>
-              <img src={post.image} alt='postimage' className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105' />
-              <div className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200'>
+            <div 
+              key={post?._id} 
+              className='relative group cursor-pointer aspect-square overflow-hidden rounded-sm'
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handlePostClick(post);
+              }}
+            >
+              {post?.isReel || post?.video ? (
+                <video 
+                  src={post.video} 
+                  className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none' 
+                  muted 
+                />
+              ) : (
+                <img 
+                  src={post.image} 
+                  alt='postimage' 
+                  className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none' 
+                />
+              )}
+              <div className='absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none'>
                 <div className='flex items-center text-white gap-6'>
                   <span className='flex items-center gap-1.5 font-semibold text-sm'>
-                    <Heart size={18} fill="white" /> {post?.likes?.length}
+                    <Heart size={18} fill="white" /> {post?.likes?.length || 0}
                   </span>
                   <span className='flex items-center gap-1.5 font-semibold text-sm'>
-                    <MessageCircle size={18} fill="white" /> {post?.comments?.length}
+                    <MessageCircle size={18} fill="white" /> {post?.comments?.length || 0}
                   </span>
                 </div>
               </div>
@@ -160,6 +201,8 @@ const Profile = () => {
           </div>
         )}
       </div>
+
+      <CommentDialog open={openPost} setOpen={setOpenPost} />
     </div>
   )
 }
