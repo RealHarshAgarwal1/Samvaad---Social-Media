@@ -9,17 +9,11 @@ export const sendVerificationEmail = async (email, token) => {
         let transporter;
         if (process.env.SMTP_USER && process.env.SMTP_PASS) {
             transporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 587,
-                secure: false, // true for 465, false for other ports
+                service: 'gmail',
                 auth: {
                     user: process.env.SMTP_USER,
                     pass: process.env.SMTP_PASS,
                 },
-                tls: {
-                    rejectUnauthorized: false
-                },
-                connectionTimeout: 10000, // 10 seconds timeout for connection
             });
         } else {
             console.error("CRITICAL: SMTP_USER and SMTP_PASS are not set in environment variables!");
@@ -30,7 +24,7 @@ export const sendVerificationEmail = async (email, token) => {
         const verifyLink = `${frontendUrl}/verify-email?token=${token}`;
 
         const mailOptions = {
-            from: '"Samvaad App" <no-reply@samvaad.com>',
+            from: process.env.SMTP_USER,
             to: email,
             subject: 'Verify your email address - Samvaad',
             html: `
