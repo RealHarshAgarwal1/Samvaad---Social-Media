@@ -16,6 +16,9 @@ export const sendVerificationEmail = async (email, token) => {
                     user: process.env.SMTP_USER,
                     pass: process.env.SMTP_PASS,
                 },
+                tls: {
+                    rejectUnauthorized: false
+                },
                 connectionTimeout: 10000, // 10 seconds timeout for connection
             });
         } else {
