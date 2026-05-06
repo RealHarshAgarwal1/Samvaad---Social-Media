@@ -7,5 +7,8 @@ const postSchema = new mongoose.Schema({
     author:{type:mongoose.Schema.Types.ObjectId, ref:'User', required:true},
     likes:[{type:mongoose.Schema.Types.ObjectId, ref:'User'}],
     comments:[{type:mongoose.Schema.Types.ObjectId, ref:'Comment'}],
+    taggedUsers:[{type:mongoose.Schema.Types.ObjectId, ref:'User'}],
+    location:{type:String, default:''},
+    isTravel:{type:Boolean, default:false},
 },{timestamps:true});
 export const Post = mongoose.model('Post', postSchema);

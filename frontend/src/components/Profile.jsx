@@ -5,12 +5,13 @@ import { Link, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { AtSign, Heart, MessageCircle, Grid3X3, Bookmark, Film, Tag } from 'lucide-react';
+import { AtSign, Heart, MessageCircle, Grid3X3, Bookmark, Film, Tag, Trash2, Pencil } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { setUserProfile } from '@/redux/authSlice';
-import { setSelectedPost } from '@/redux/postSlice';
+import { setPosts, setSelectedPost } from '@/redux/postSlice';
 import CommentDialog from './CommentDialog';
+import EditPostDialog from './EditPostDialog';
 
 const Profile = () => {
   const params = useParams();
@@ -18,8 +19,11 @@ const Profile = () => {
   useGetUserProfile(userId);
   const [activeTab, setActiveTab] = useState('posts');
   const [openPost, setOpenPost] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [postToEdit, setPostToEdit] = useState(null);
 
-  const { userProfile, user } = useSelector(store => store.auth);
+  const { userProfile, user, taggedPosts } = useSelector(store => store.auth);
+  const { posts } = useSelector(store => store.post);
   const dispatch = useDispatch();
 
   const [isFollowing, setIsFollowing] = useState(false);
@@ -59,11 +63,44 @@ const Profile = () => {
     displayedPost = userProfile?.bookmarks || [];
   } else if (activeTab === 'reels') {
     displayedPost = userProfile?.posts?.filter(p => p.isReel) || [];
+  } else if (activeTab === 'tags') {
+    displayedPost = taggedPosts || [];
   }
 
   const handlePostClick = (post) => {
     dispatch(setSelectedPost(post));
     setOpenPost(true);
+  };
+
+  const handleEditClick = (e, post) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPostToEdit(post);
+    setEditOpen(true);
+  };
+
+  const deletePostHandler = async (e, post) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    try {
+      const res = await axios.delete(`/api/v1/post/delete/${post._id}`, { withCredentials: true });
+      if (res.data.success) {
+        // Update userProfile posts
+        const updatedProfile = {
+          ...userProfile,
+          posts: userProfile.posts.filter(p => p._id !== post._id)
+        };
+        dispatch(setUserProfile(updatedProfile));
+        // Update global posts
+        const updatedPosts = posts.filter(p => p._id !== post._id);
+        dispatch(setPosts(updatedPosts));
+        toast.success(res.data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || 'Failed to delete post');
+    }
   };
 
   const tabs = [
@@ -188,6 +225,25 @@ const Profile = () => {
                   </span>
                 </div>
               </div>
+              {/* Actions - only for own posts */}
+              {user?._id === post?.author?._id && (
+                <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                  <button
+                    onClick={(e) => handleEditClick(e, post)}
+                    className="bg-white/80 hover:bg-white text-gray-700 rounded-full p-1.5 shadow-lg backdrop-blur-sm transition-colors"
+                    title="Edit post"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={(e) => deletePostHandler(e, post)}
+                    className="bg-red-500/80 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg transition-colors"
+                    title="Delete post"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -195,14 +251,17 @@ const Profile = () => {
         {(!displayedPost || displayedPost.length === 0) && (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="w-16 h-16 rounded-full border-2 border-gray-200 flex items-center justify-center mb-3">
-              <Grid3X3 className="w-8 h-8 text-gray-300" />
+              {activeTab === 'tags' ? <Tag className="w-8 h-8 text-gray-300" /> : <Grid3X3 className="w-8 h-8 text-gray-300" />}
             </div>
-            <p className="text-gray-400 font-medium">No posts yet</p>
+            <p className="text-gray-400 font-medium">
+              {activeTab === 'tags' ? 'No tagged posts yet' : 'No posts yet'}
+            </p>
           </div>
         )}
       </div>
 
       <CommentDialog open={openPost} setOpen={setOpenPost} />
+      {postToEdit && <EditPostDialog open={editOpen} setOpen={setEditOpen} post={postToEdit} />}
     </div>
   )
 }

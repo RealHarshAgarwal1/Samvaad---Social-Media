@@ -1,14 +1,15 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 import { readFileAsDataURL } from '@/lib/utils';
-import { Loader2, ImagePlus, X } from 'lucide-react';
+import { Loader2, ImagePlus, X, Tag, Search, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { setPosts } from '@/redux/postSlice';
+import VibeMeter from './VibeMeter';
 
 const CreatePost = ({ open, setOpen }) => {
   const imageRef = useRef();
@@ -20,6 +21,51 @@ const CreatePost = ({ open, setOpen }) => {
   const { user } = useSelector(store => store.auth);
   const { posts } = useSelector(store => store.post);
   const dispatch = useDispatch();
+
+  const [location, setLocation] = useState("");
+
+  // Tag people state
+  const [showTagSearch, setShowTagSearch] = useState(false);
+  const [tagQuery, setTagQuery] = useState("");
+  const [tagSearchResults, setTagSearchResults] = useState([]);
+  const [taggedUsers, setTaggedUsers] = useState([]);
+  const [tagSearching, setTagSearching] = useState(false);
+
+  // Debounced user search for tagging
+  useEffect(() => {
+    if (!tagQuery.trim()) {
+      setTagSearchResults([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      try {
+        setTagSearching(true);
+        const res = await axios.get(`/api/v1/user/search?query=${encodeURIComponent(tagQuery)}`, { withCredentials: true });
+        if (res.data.success) {
+          // Filter out already tagged users and the current user
+          const filtered = res.data.users.filter(
+            u => u._id !== user?._id && !taggedUsers.some(t => t._id === u._id)
+          );
+          setTagSearchResults(filtered);
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setTagSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [tagQuery, taggedUsers, user]);
+
+  const addTaggedUser = (u) => {
+    setTaggedUsers(prev => [...prev, u]);
+    setTagQuery("");
+    setTagSearchResults([]);
+  };
+
+  const removeTaggedUser = (userId) => {
+    setTaggedUsers(prev => prev.filter(u => u._id !== userId));
+  };
 
   const fileChangeHandler = async (e) => {
     const file = e.target.files?.[0];
@@ -35,6 +81,10 @@ const CreatePost = ({ open, setOpen }) => {
     const formData = new FormData();
     formData.append("caption", caption);
     if (filePreview) formData.append("file", file);
+    if (location) formData.append("location", location);
+    if (taggedUsers.length > 0) {
+      formData.append("taggedUsers", JSON.stringify(taggedUsers.map(u => u._id)));
+    }
     try {
       setLoading(true);
       const res = await axios.post('/api/v1/post/addpost', formData, {
@@ -49,6 +99,10 @@ const CreatePost = ({ open, setOpen }) => {
         setFilePreview("");
         setFileType("");
         setFile("");
+        setLocation("");
+        setTaggedUsers([]);
+        setShowTagSearch(false);
+        setTagQuery("");
       }
     } catch (error) {
       toast.error(error.response.data.message);
@@ -81,6 +135,98 @@ const CreatePost = ({ open, setOpen }) => {
           className="focus-visible:ring-indigo-200 border-gray-200 rounded-xl resize-none min-h-[80px]" 
           placeholder="Write a caption..." 
         />
+
+        {/* ── Vibe Meter ── */}
+        <VibeMeter text={caption} />
+
+        {/* ── Add Location Section ── */}
+        <div className="flex items-center gap-2 border-b border-gray-100 pb-2 mb-2">
+          <MapPin size={16} className="text-gray-400" />
+          <input
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="Add Location"
+            className="flex-1 text-sm focus:outline-none placeholder-gray-400 bg-transparent"
+          />
+        </div>
+
+        {/* ── Tag People Section ── */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowTagSearch(!showTagSearch)}
+            className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors py-1"
+          >
+            <Tag size={16} />
+            {taggedUsers.length > 0 ? `Tag People (${taggedUsers.length})` : 'Tag People'}
+          </button>
+
+          {/* Tagged user chips */}
+          {taggedUsers.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {taggedUsers.map(u => (
+                <span key={u._id} className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-medium">
+                  <Avatar className="w-4 h-4">
+                    <AvatarImage src={u.profilePicture} />
+                    <AvatarFallback className="bg-indigo-200 text-indigo-700 text-[8px]">{u.username?.[0]?.toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  @{u.username}
+                  <button
+                    type="button"
+                    onClick={() => removeTaggedUser(u._id)}
+                    className="ml-0.5 hover:bg-indigo-100 rounded-full p-0.5 transition-colors"
+                  >
+                    <X size={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Tag search input & dropdown */}
+          {showTagSearch && (
+            <div className="mt-2 relative">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={tagQuery}
+                  onChange={(e) => setTagQuery(e.target.value)}
+                  placeholder="Search users to tag..."
+                  className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all bg-gray-50"
+                  autoFocus
+                />
+              </div>
+
+              {/* Search results dropdown */}
+              {(tagSearchResults.length > 0 || tagSearching) && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  {tagSearching && (
+                    <div className="flex items-center justify-center py-3">
+                      <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                      <span className="ml-2 text-xs text-gray-400">Searching...</span>
+                    </div>
+                  )}
+                  {tagSearchResults.map(u => (
+                    <button
+                      key={u._id}
+                      type="button"
+                      onClick={() => addTaggedUser(u)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-indigo-50 transition-colors text-left"
+                    >
+                      <Avatar className="w-7 h-7">
+                        <AvatarImage src={u.profilePicture} />
+                        <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white text-[10px]">{u.username?.[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium text-gray-700">@{u.username}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {filePreview ? (
           <div className='relative w-full h-64 rounded-xl overflow-hidden group bg-black flex items-center justify-center'>

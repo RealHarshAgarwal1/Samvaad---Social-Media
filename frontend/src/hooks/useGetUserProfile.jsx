@@ -1,4 +1,4 @@
-import { setUserProfile } from "@/redux/authSlice";
+import { setUserProfile, setTaggedPosts } from "@/redux/authSlice";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
@@ -13,6 +13,7 @@ const useGetUserProfile = (userId) => {
                 const res = await axios.get(`/api/v1/user/${userId}/profile`, { withCredentials: true });
                 if (res.data.success) {
                     dispatch(setUserProfile(res.data.user));
+                    dispatch(setTaggedPosts(res.data.taggedPosts || []));
                 }
             } catch (error) {
                 console.log(error);

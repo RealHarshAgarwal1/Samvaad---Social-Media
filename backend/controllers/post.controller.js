@@ -8,11 +8,21 @@ import { Notification } from "../models/notification.model.js";
 
 export const addNewPost = async (req, res) => {
     try {
-        const { caption } = req.body;
+        const { caption, taggedUsers: taggedUsersRaw, location } = req.body;
         const file = req.file;
         const authorId = req.id;
 
         if (!file) return res.status(400).json({ message: 'File required' });
+
+        // Parse tagged users
+        let taggedUserIds = [];
+        if (taggedUsersRaw) {
+            try {
+                taggedUserIds = JSON.parse(taggedUsersRaw);
+            } catch (e) {
+                taggedUserIds = [];
+            }
+        }
 
         let cloudResponse;
         let isReel = false;
@@ -34,12 +44,23 @@ export const addNewPost = async (req, res) => {
             cloudResponse = await cloudinary.uploader.upload(fileUri);
         }
 
+        // Auto-detect travel keywords
+        const travelKeywords = ['travel', 'trip', 'explore', 'wanderlust', 'vacation', 'adventure', 'hiking', 'beach', 'mountains', 'tour', 'holiday'];
+        let isTravel = false;
+        if (location && caption) {
+            const captionLower = caption.toLowerCase();
+            isTravel = travelKeywords.some(keyword => captionLower.includes(keyword));
+        }
+
         const post = await Post.create({
             caption,
             image: !isReel ? cloudResponse.secure_url : undefined,
             video: isReel ? cloudResponse.secure_url : undefined,
             isReel,
-            author: authorId
+            author: authorId,
+            taggedUsers: taggedUserIds,
+            location,
+            isTravel
         });
         const user = await User.findById(authorId);
         if (user) {
@@ -47,7 +68,35 @@ export const addNewPost = async (req, res) => {
             await user.save();
         }
 
+        // Send tag notifications to each tagged user
+        if (taggedUserIds.length > 0) {
+            for (const taggedUserId of taggedUserIds) {
+                if (taggedUserId.toString() !== authorId.toString()) {
+                    const newNotification = await Notification.create({
+                        recipient: taggedUserId,
+                        sender: authorId,
+                        type: 'tag',
+                        post: post._id,
+                        messageString: `${user.username} tagged you in a post.`
+                    });
+
+                    const taggedUserSocketId = getReceiverSocketId(taggedUserId);
+                    if (taggedUserSocketId) {
+                        io.to(taggedUserSocketId).emit('notification', {
+                            _id: newNotification._id,
+                            type: 'tag',
+                            userId: authorId,
+                            userDetails: { _id: user._id, username: user.username, profilePicture: user.profilePicture },
+                            postId: post._id,
+                            message: newNotification.messageString
+                        });
+                    }
+                }
+            }
+        }
+
         await post.populate({ path: 'author', select: '-password' });
+        await post.populate({ path: 'taggedUsers', select: 'username profilePicture' });
 
         return res.status(201).json({
             message: 'New post added',
@@ -74,7 +123,8 @@ export const getAllPost = async (req, res) => {
                     path: 'author',
                     select: 'username profilePicture'
                 }
-            });
+            })
+            .populate({ path: 'taggedUsers', select: 'username profilePicture' });
         return res.status(200).json({
             posts,
             success: true
@@ -99,7 +149,8 @@ export const getAllReels = async (req, res) => {
                     path: 'author',
                     select: 'username profilePicture'
                 }
-            });
+            })
+            .populate({ path: 'taggedUsers', select: 'username profilePicture' });
         return res.status(200).json({
             reels,
             success: true
@@ -126,7 +177,7 @@ export const getUserPost = async (req, res) => {
                 path: 'author',
                 select: 'username, profilePicture'
             }
-        });
+        }).populate({ path: 'taggedUsers', select: 'username profilePicture' });
         return res.status(200).json({
             posts,
             success: true
@@ -357,6 +408,101 @@ export const bookmarkPost = async (req, res) => {
             await user.save();
             return res.status(200).json({ type: 'saved', message: 'Post bookmarked', success: true });
         }
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: error.message || "Internal server error",
+            success: false
+        });
+    }
+}
+
+export const getTaggedPosts = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const posts = await Post.find({ taggedUsers: userId }).sort({ createdAt: -1 })
+            .populate({ path: 'author', select: 'username profilePicture' })
+            .populate({
+                path: 'comments',
+                sort: { createdAt: -1 },
+                populate: {
+                    path: 'author',
+                    select: 'username profilePicture'
+                }
+            })
+            .populate({ path: 'taggedUsers', select: 'username profilePicture' });
+        return res.status(200).json({
+            posts,
+            success: true
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: error.message || "Internal server error",
+            success: false
+        });
+    }
+}
+
+export const getTravelPosts = async (req, res) => {
+    try {
+        const posts = await Post.find({ isTravel: true }).sort({ createdAt: -1 })
+            .populate({ path: 'author', select: 'username profilePicture' })
+            .populate({
+                path: 'comments',
+                sort: { createdAt: -1 },
+                populate: {
+                    path: 'author',
+                    select: 'username profilePicture'
+                }
+            })
+            .populate({ path: 'taggedUsers', select: 'username profilePicture' });
+        return res.status(200).json({
+            posts,
+            success: true
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: error.message || "Internal server error",
+            success: false
+        });
+    }
+}
+
+export const editPost = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const authorId = req.id;
+        const { caption, location } = req.body;
+
+        const post = await Post.findById(postId);
+        if (!post) return res.status(404).json({ message: 'Post not found', success: false });
+
+        if (post.author.toString() !== authorId) return res.status(403).json({ message: 'Unauthorized' });
+
+        if (caption !== undefined) post.caption = caption;
+        if (location !== undefined) post.location = location;
+
+        // Auto-detect travel keywords if caption or location is updated
+        const travelKeywords = ['travel', 'trip', 'explore', 'wanderlust', 'vacation', 'adventure', 'hiking', 'beach', 'mountains', 'tour', 'holiday'];
+        let isTravel = false;
+        if (post.location && post.caption) {
+            const captionLower = post.caption.toLowerCase();
+            isTravel = travelKeywords.some(keyword => captionLower.includes(keyword));
+        }
+        post.isTravel = isTravel;
+
+        await post.save();
+        await post.populate({ path: 'author', select: '-password' });
+        await post.populate({ path: 'taggedUsers', select: 'username profilePicture' });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Post updated successfully',
+            post
+        });
 
     } catch (error) {
         console.log(error);

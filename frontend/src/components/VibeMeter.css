@@ -1,0 +1,229 @@
+/* ╔══════════════════════════════════════════════════╗
+   ║            VIBE METER – Premium Styles            ║
+   ╚══════════════════════════════════════════════════╝ */
+
+/* ─── Container ─── */
+.vibe-meter {
+  position: relative;
+  overflow: hidden;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  box-shadow:
+    0 2px 12px -2px rgba(99, 102, 241, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  animation: vibeMeterSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.vibe-meter:hover {
+  box-shadow:
+    0 4px 20px -4px rgba(99, 102, 241, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.vibe-meter--pulse {
+  animation: vibePulse 0.6s ease;
+}
+
+@keyframes vibeMeterSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes vibePulse {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.015); }
+  60%  { transform: scale(0.995); }
+  100% { transform: scale(1); }
+}
+
+/* ─── Sparkles ─── */
+.vibe-meter__sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.vibe-sparkle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sparkle-color);
+  left: var(--sparkle-x);
+  top: var(--sparkle-y);
+  opacity: 0;
+  animation: sparkleFloat 2.4s ease-in-out var(--sparkle-delay) infinite;
+}
+
+@keyframes sparkleFloat {
+  0%   { opacity: 0; transform: scale(0) translateY(0); }
+  20%  { opacity: 0.7; transform: scale(1); }
+  60%  { opacity: 0.4; transform: scale(0.7) translateY(-12px); }
+  100% { opacity: 0; transform: scale(0) translateY(-20px); }
+}
+
+/* ─── Header ─── */
+.vibe-meter__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.vibe-meter__title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vibe-meter__icon {
+  font-size: 14px;
+  animation: iconBounce 2s ease infinite;
+}
+
+@keyframes iconBounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+
+.vibe-meter__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+/* ─── Badge ─── */
+.vibe-meter__badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  animation: badgePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.18);
+}
+
+@keyframes badgePop {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* ─── Description ─── */
+.vibe-meter__desc {
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  opacity: 0.85;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Confidence bar ─── */
+.vibe-meter__confidence {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.vibe-meter__conf-track {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.vibe-meter__conf-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.vibe-meter__conf-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  min-width: 76px;
+  text-align: right;
+}
+
+/* ─── Chips breakdown ─── */
+.vibe-meter__chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.vibe-chip {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.25s ease;
+}
+
+.vibe-chip--active {
+  color: var(--chip-color);
+  border-color: var(--chip-color);
+  background: var(--chip-glow);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--chip-glow);
+}
+
+.vibe-chip__bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 0 999px 999px 0;
+  background: var(--chip-gradient, #e2e8f0);
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.6;
+}
+
+.vibe-chip--active .vibe-chip__bar {
+  opacity: 1;
+}
+
+.vibe-chip__emoji {
+  font-size: 13px;
+}
+
+.vibe-chip__label {
+  position: relative;
+  z-index: 1;
+}

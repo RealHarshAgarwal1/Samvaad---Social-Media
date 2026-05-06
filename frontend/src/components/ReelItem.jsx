@@ -1,17 +1,19 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Heart, MessageCircle, Send, Play } from 'lucide-react';
+import { Heart, MessageCircle, Send, Play, Trash2, Pencil } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useSelector, useDispatch } from 'react-redux';
 import { setPosts, setSelectedPost } from '@/redux/postSlice';
 import CommentDialog from './CommentDialog';
+import EditPostDialog from './EditPostDialog';
 
 const ReelItem = ({ reel }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(reel.likes.length);
   const [openComment, setOpenComment] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   
   const videoRef = useRef(null);
   const { user } = useSelector(store => store.auth);
@@ -97,6 +99,21 @@ const ReelItem = ({ reel }) => {
     }
   };
 
+  const deleteReelHandler = async () => {
+    if (!window.confirm('Are you sure you want to delete this reel?')) return;
+    try {
+      const res = await axios.delete(`/api/v1/post/delete/${reel._id}`, { withCredentials: true });
+      if (res.data.success) {
+        const updatedPosts = posts.filter(p => p._id !== reel._id);
+        dispatch(setPosts(updatedPosts));
+        toast.success(res.data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || 'Failed to delete reel');
+    }
+  };
+
   return (
     <div className="relative w-full h-full bg-black">
       <video
@@ -147,6 +164,26 @@ const ReelItem = ({ reel }) => {
             <Send size={26} className="text-white" />
           </button>
         </div>
+
+        {/* Actions - only for own reels */}
+        {user?._id === reel.author._id && (
+          <div className="flex flex-col items-center gap-2 mt-2 pt-2 border-t border-white/20">
+            <button 
+              onClick={() => setEditOpen(true)}
+              className="bg-white/20 p-2.5 rounded-full backdrop-blur-sm hover:bg-white/40 transition-colors"
+              title="Edit reel"
+            >
+              <Pencil size={22} className="text-white" />
+            </button>
+            <button 
+              onClick={deleteReelHandler}
+              className="bg-red-500/60 p-2.5 rounded-full backdrop-blur-sm hover:bg-red-600/80 transition-colors"
+              title="Delete reel"
+            >
+              <Trash2 size={22} className="text-white" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Bottom Overlay (Info) */}
@@ -167,6 +204,7 @@ const ReelItem = ({ reel }) => {
       </div>
 
       <CommentDialog open={openComment} setOpen={setOpenComment} post={reel} />
+      <EditPostDialog open={editOpen} setOpen={setEditOpen} post={reel} />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from './ui/dialog'
-import { Bookmark, MessageCircle, MoreHorizontal, Send } from 'lucide-react'
+import { Bookmark, MessageCircle, MoreHorizontal, Send, Tag, MapPin } from 'lucide-react'
 import { Button } from './ui/button'
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import CommentDialog from './CommentDialog'
@@ -10,6 +10,8 @@ import axios from 'axios'
 import { toast } from 'sonner'
 import { setPosts, setSelectedPost } from '@/redux/postSlice'
 import { Badge } from './ui/badge'
+import { Link } from 'react-router-dom'
+import EditPostDialog from './EditPostDialog'
 
 const Post = ({ post }) => {
     const [text, setText] = useState("");
@@ -19,6 +21,7 @@ const Post = ({ post }) => {
     const [liked, setLiked] = useState(post.likes.includes(user?._id) || false);
     const [postLike, setPostLike] = useState(post.likes.length);
     const [comment, setComment] = useState(post.comments);
+    const [editOpen, setEditOpen] = useState(false);
     const dispatch = useDispatch();
 
     const changeEventHandler = (e) => {
@@ -116,9 +119,17 @@ const Post = ({ post }) => {
                         <AvatarImage src={post.author?.profilePicture} alt="post_image" />
                         <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white text-sm">{post.author?.username?.[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <div className='flex items-center gap-2'>
-                        <h1 className='font-semibold text-sm'>{post.author?.username}</h1>
-                        {user?._id === post.author._id && <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-0 text-[10px] px-2">Author</Badge>}
+                    <div className='flex flex-col justify-center'>
+                        <div className='flex items-center gap-2'>
+                            <h1 className='font-semibold text-sm'>{post.author?.username}</h1>
+                            {user?._id === post.author._id && <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-0 text-[10px] px-2">Author</Badge>}
+                        </div>
+                        {post.location && (
+                            <span className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                                <MapPin size={10} />
+                                {post.location}
+                            </span>
+                        )}
                     </div>
                 </div>
                 <Dialog>
@@ -130,7 +141,12 @@ const Post = ({ post }) => {
                         <DialogDescription className="sr-only">Options for this post.</DialogDescription>
                         {post?.author?._id !== user?._id && <Button variant='ghost' className="cursor-pointer w-fit text-red-500 font-semibold hover:bg-red-50">Unfollow</Button>}
                         <Button variant='ghost' className="cursor-pointer w-fit hover:bg-gray-50">Add to favorites</Button>
-                        {user && user?._id === post?.author._id && <Button onClick={deletePostHandler} variant='ghost' className="cursor-pointer w-fit text-red-500 hover:bg-red-50">Delete</Button>}
+                        {user && user?._id === post?.author._id && (
+                            <>
+                                <Button onClick={() => setEditOpen(true)} variant='ghost' className="cursor-pointer w-fit hover:bg-gray-50">Edit</Button>
+                                <Button onClick={deletePostHandler} variant='ghost' className="cursor-pointer w-fit text-red-500 hover:bg-red-50">Delete</Button>
+                            </>
+                        )}
                     </DialogContent>
                 </Dialog>
             </div>
@@ -177,6 +193,25 @@ const Post = ({ post }) => {
                     <span className="text-gray-700">{post.caption}</span>
                 </p>
 
+                {/* Tagged users */}
+                {post.taggedUsers && post.taggedUsers.length > 0 && (
+                  <p className='text-xs text-gray-500 mt-1 flex items-center gap-1 flex-wrap'>
+                    <Tag size={12} className="text-gray-400" />
+                    <span>with</span>
+                    {post.taggedUsers.map((taggedUser, index) => (
+                      <span key={taggedUser._id}>
+                        <Link 
+                          to={`/profile/${taggedUser._id}`} 
+                          className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
+                        >
+                          @{taggedUser.username}
+                        </Link>
+                        {index < post.taggedUsers.length - 1 && <span>, </span>}
+                      </span>
+                    ))}
+                  </p>
+                )}
+
                 {comment.length > 0 && (
                     <span onClick={() => { dispatch(setSelectedPost(post)); setOpen(true); }}
                         className='cursor-pointer text-sm text-gray-400 hover:text-gray-500 transition-colors block mt-1'>
@@ -198,6 +233,8 @@ const Post = ({ post }) => {
                     {text && <span onClick={commentHandler} className='text-indigo-500 font-semibold text-sm cursor-pointer hover:text-indigo-600 transition-colors ml-2'>Post</span>}
                 </div>
             </div>
+
+            <EditPostDialog open={editOpen} setOpen={setEditOpen} post={post} />
         </div>
     )
 }

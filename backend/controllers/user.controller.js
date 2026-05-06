@@ -207,7 +207,8 @@ export const getProfile = async (req, res) => {
                         path: 'author',
                         select: 'username profilePicture'
                     }
-                }
+                },
+                { path: 'taggedUsers', select: 'username profilePicture' }
             ]
         }).populate({
             path: 'bookmarks',
@@ -220,11 +221,27 @@ export const getProfile = async (req, res) => {
                         path: 'author',
                         select: 'username profilePicture'
                     }
-                }
+                },
+                { path: 'taggedUsers', select: 'username profilePicture' }
             ]
         });
+
+        // Fetch posts where this user is tagged
+        const taggedPosts = await Post.find({ taggedUsers: userId }).sort({ createdAt: -1 })
+            .populate({ path: 'author', select: 'username profilePicture' })
+            .populate({
+                path: 'comments',
+                sort: { createdAt: -1 },
+                populate: {
+                    path: 'author',
+                    select: 'username profilePicture'
+                }
+            })
+            .populate({ path: 'taggedUsers', select: 'username profilePicture' });
+
         return res.status(200).json({
             user,
+            taggedPosts,
             success: true
         });
     } catch (error) {
