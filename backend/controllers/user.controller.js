@@ -41,7 +41,13 @@ export const register = async (req, res) => {
             user.verificationToken = crypto.randomBytes(32).toString('hex');
             await user.save();
             
-            await sendVerificationEmail(email, user.verificationToken);
+            const emailSent = await sendVerificationEmail(email, user.verificationToken);
+            if (!emailSent) {
+                return res.status(500).json({
+                    message: "Failed to send verification email. Please try again.",
+                    success: false,
+                });
+            }
 
             return res.status(200).json({
                 message: "Verification email resent! Please check your inbox.",
@@ -68,7 +74,14 @@ export const register = async (req, res) => {
             verificationToken
         });
         
-        await sendVerificationEmail(email, verificationToken);
+        const emailSent = await sendVerificationEmail(email, verificationToken);
+        if (!emailSent) {
+            await User.deleteOne({ email });
+            return res.status(500).json({
+                message: "Account creation failed because the verification email could not be sent. Please try again later.",
+                success: false,
+            });
+        }
 
         return res.status(201).json({
             message: "Account created! Please check your email to verify.",

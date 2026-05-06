@@ -14,19 +14,11 @@ export const sendVerificationEmail = async (email, token) => {
                     user: process.env.SMTP_USER,
                     pass: process.env.SMTP_PASS,
                 },
+                connectionTimeout: 10000, // 10 seconds timeout for connection
             });
         } else {
-            // Mock output for development
-            const testAccount = await nodemailer.createTestAccount();
-            transporter = nodemailer.createTransport({
-                host: testAccount.smtp.host,
-                port: testAccount.smtp.port,
-                secure: testAccount.smtp.secure,
-                auth: {
-                    user: testAccount.user,
-                    pass: testAccount.pass,
-                },
-            });
+            console.error("CRITICAL: SMTP_USER and SMTP_PASS are not set in environment variables!");
+            return false;
         }
 
         const frontendUrl = process.env.URL || 'http://localhost:5173';
