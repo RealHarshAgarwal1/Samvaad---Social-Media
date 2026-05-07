@@ -7,24 +7,20 @@ export const sendVerificationEmail = async (email, token) => {
         // Create a mock default transport if no real SMTP exists. 
         // For production, the user will configure process.env.SMTP_USER, etc.
         let transporter;
-        
-        console.log(`[EMAIL DEBUG] SMTP_USER: ${process.env.SMTP_USER ? '✓ SET' : '✗ NOT SET'}`);
-        console.log(`[EMAIL DEBUG] SMTP_PASS: ${process.env.SMTP_PASS ? '✓ SET' : '✗ NOT SET'}`);
-        console.log(`[EMAIL DEBUG] NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
-        
         if (process.env.SMTP_USER && process.env.SMTP_PASS) {
             transporter = nodemailer.createTransport({
-                service: 'gmail',
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
+                family: 4, // force IPv4 (fixes Render issue)
+
                 auth: {
                     user: process.env.SMTP_USER,
                     pass: process.env.SMTP_PASS,
                 },
             });
-            console.log('[EMAIL DEBUG] Transporter created successfully');
         } else {
             console.error("CRITICAL: SMTP_USER and SMTP_PASS are not set in environment variables!");
-            console.error(`SMTP_USER = ${process.env.SMTP_USER}`);
-            console.error(`SMTP_PASS = ${process.env.SMTP_PASS}`);
             return false;
         }
 
@@ -45,13 +41,11 @@ export const sendVerificationEmail = async (email, token) => {
             `,
         };
 
-        console.log(`[EMAIL DEBUG] Attempting to send email to: ${email}`);
         const info = await transporter.sendMail(mailOptions);
         
         console.log(`\n================================`);
         console.log(`✉️ EMAIL SENT TO: ${email}`);
         console.log(`🔗 VERIFICATION LINK: ${verifyLink}`);
-        console.log(`📧 Response ID: ${info.response}`);
         if(!process.env.SMTP_USER) {
             console.log(`🌐 Preview Email: ${nodemailer.getTestMessageUrl(info)}`);
         }
@@ -59,10 +53,7 @@ export const sendVerificationEmail = async (email, token) => {
 
         return true;
     } catch (error) {
-        console.error('❌ EMAIL SENDING FAILED');
-        console.error(`Error Code: ${error.code}`);
-        console.error(`Error Message: ${error.message}`);
-        console.error(`Full Error:`, error);
+        console.error('Email sending failed:', error);
         return false;
     }
 };
